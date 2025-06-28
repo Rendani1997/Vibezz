@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibez - Video Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        nav {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #ff0000;
+            font-weight: bold;
+        }
+        nav a:hover {
+            color: #cc0000;
+        }
+        #search-form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #search-input {
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px 0 0 4px;
+        }
+        #search-button {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-left: none;
+            background-color: #ff0000;
+            color: white;
+            cursor: pointer;
+            border-radius: 0 4px 4px 0;
+        }
+        #search-button:hover {
+            background-color: #cc0000;
+        }
+        #categories {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .category-btn {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .category-btn:hover {
+            background-color: #555;
+        }
+        #video-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .video-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .video-card:hover {
+            transform: scale(1.05);
+        }
+        .video-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .video-card h3 {
+            font-size: 16px;
+            margin: 10px;
+            color: #333;
+        }
+        .video-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+        #about {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        #about h2 {
+            color: #333;
+        }
+        #about p {
+            line-height: 1.6;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vibez</h1>
+        <nav>
+            <a href="#" id="home-link">Home</a>
+            <a href="#" id="about-link">About</a>
+        </nav>
+        <div id="home">
+            <div id="categories">
+                <button class="category-btn" data-query="music">Music</button>
+                <button class="category-btn" data-query="gaming">Gaming</button>
+                <button class="category-btn" data-query="tutorials">Tutorials</button>
+            </div>
+            <form id="search-form">
+                <input type="text" id="search-input" placeholder="Search for videos..." value="trending">
+                <button type="submit" id="search-button">Search</button>
+            </form>
+            <div id="video-list"></div>
+        </div>
+        <div id="about">
+            <h2>About Vibez</h2>
+            <p>Vibez is your go-to platform for discovering awesome videos from YouTube. Whether you're into music, gaming, tutorials, or just exploring what's trending, Vibez makes it easy to find and watch videos that match your vibe. Powered by the YouTube Data API, our site offers a seamless search experience with curated categories to help you dive into your favorite content. Start exploring now!</p>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyCHxUZ3C4tmfUC7Xr6iN5nsXKBcQMYrK2I';
+        const BASE_URL = 'https://www.googleapis.com/youtube/v3/search';
+
+        async function fetchVideos(query) {
+            try {
+                const response = await fetch(
+                    `${BASE_URL}?part=snippet&maxResults=12&q=${encodeURIComponent(query)}&key=${API_KEY}`
+                );
+                if (!response.ok) throw new Error('Failed to fetch videos');
+                const data = await response.json();
+                displayVideos(data.items);
+            } catch (error) {
+                console.error('Error fetching videos:', error);
+                document.getElementById('video-list').innerHTML = '<p>Error loading videos. Please try again.</p>';
+            }
+        }
+
+        function displayVideos(videos) {
+            const videoList = document.getElementById('video-list');
+            videoList.innerHTML = '';
+            videos.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.innerHTML = `
+                    <a href="https://www.youtube.com/watch?v=${video.id.videoId}" target="_blank">
+                        <img src="${video.snippet.thumbnails.medium.url}" alt="${video.snippet.title}">
+                        <h3>${video.snippet.title}</h3>
+                    </a>
+                `;
+                videoList.appendChild(videoCard);
+            });
+        }
+
+        document.getElementById('search-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const query = document.getElementById('search-input').value.trim();
+            if (query) {
+                fetchVideos(query);
+                showHome();
+            }
+        });
+
+        document.querySelectorAll('.category-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const query = button.getAttribute('data-query');
+                fetchVideos(query);
+                document.getElementById('search-input').value = query;
+                showHome();
+            });
+        });
+
+        document.getElementById('home-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            showHome();
+        });
+
+        document.getElementById('about-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            showAbout();
+        });
+
+        function showHome() {
+            document.getElementById('home').style.display = 'block';
+            document.getElementById('about').style.display = 'none';
+        }
+
+        function showAbout() {
+            document.getElementById('home').style.display = 'none';
+            document.getElementById('about').style.display = 'block';
+        }
+
+        // Initial load with default query
+        fetchVideos('trending');
+    </script>
+</body>
+</html>
